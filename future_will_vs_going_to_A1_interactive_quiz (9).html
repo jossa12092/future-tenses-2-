@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Future Challenge: WILL vs GOING TO</title>
+<style>
+  :root {
+    --bg1:#0f3d91;
+    --bg2:#155e75;
+    --bg3:#123c68;
+    --card:rgba(255,255,255,.16);
+    --panel:rgba(255,255,255,.12);
+    --line:rgba(255,255,255,.23);
+    --text:#ffffff;
+    --muted:#eef7ff;
+    --green:#22c55e;
+    --blue:#55d5ff;
+    --red:#ff7b7b;
+    --shadow:0 16px 40px rgba(0,0,0,.24);
+  }
+  * { box-sizing:border-box; }
+  html, body {
+    margin:0; padding:0; width:100%; height:100%;
+    font-family: Arial, Helvetica, sans-serif; color:var(--text);
+    background: linear-gradient(145deg, var(--bg1), var(--bg2) 55%, var(--bg3));
+    overflow:hidden;
+  }
+  canvas { position:fixed; inset:0; display:block; }
+  #app { position:fixed; inset:0; padding:12px; }
+  .shell {
+    width:min(1160px, calc(100vw - 24px));
+    margin:0 auto;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .topbar, .main {
+    border:1px solid var(--line);
+    background:var(--card);
+    border-radius:24px;
+    box-shadow:var(--shadow);
+    backdrop-filter: blur(8px);
+  }
+  .topbar {
+    padding:14px 18px;
+    display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;
+  }
+  .title {
+    font-size:clamp(20px,2.8vw,33px);
+    line-height:1.02;
+    font-weight:900;
+  }
+  .subtitle { color:var(--muted); font-size:clamp(11px,1.5vw,14px); margin-top:4px; }
+  .accent-blue { color:var(--blue); }
+  .accent-green { color:var(--green); }
+  .accent-red { color:var(--red); }
+  .pillbar { display:flex; flex-wrap:wrap; gap:8px; }
+  .pill {
+    padding:10px 14px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.14);
+    font-weight:800;
+    font-size:14px;
+  }
+  .main {
+    flex:1; min-height:0; padding:18px; overflow:auto;
+  }
+  .screen { display:none; height:100%; }
+  .screen.active { display:block; }
+  .welcome {
+    display:grid;
+    grid-template-columns:1.1fr .9fr;
+    gap:18px;
+  }
+  .panel {
+    border:1px solid var(--line);
+    background:var(--panel);
+    border-radius:24px;
+    padding:18px;
+  }
+  .hero {
+    font-size:clamp(28px,4.2vw,48px);
+    font-weight:900;
+    line-height:1.02;
+    margin:0 0 14px;
+  }
+  .lead {
+    font-size:clamp(14px,1.6vw,17px);
+    line-height:1.5;
+    color:var(--muted);
+    margin-bottom:16px;
+  }
+  .list { display:grid; gap:10px; }
+  .item {
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.08);
+    border-radius:18px;
+    padding:11px 13px;
+    font-size:clamp(14px,1.5vw,16px);
+    line-height:1.4;
+  }
+  button {
+    border:none; border-radius:18px; padding:13px 17px; min-height:50px;
+    font-size:15px; font-weight:900; cursor:pointer;
+    background:linear-gradient(135deg, var(--blue), var(--green));
+    color:#04294a; box-shadow:0 10px 24px rgba(0,0,0,.18);
+  }
+  button.secondary {
+    background:rgba(255,255,255,.12);
+    color:var(--text); border:1px solid var(--line);
+  }
+  .buttonRow { display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; }
+  .questionMeta { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  #questionText {
+    font-size:clamp(19px,2.4vw,29px);
+    font-weight:900;
+    line-height:1.24;
+    margin-bottom:14px;
+    white-space:normal;
+  }
+  .meter {
+    width:100%; height:16px; border-radius:999px;
+    background:rgba(255,255,255,.12);
+    overflow:hidden; border:1px solid var(--line); margin-bottom:16px;
+  }
+  #timeBar {
+    width:100%; height:100%;
+    background:linear-gradient(90deg, var(--blue), var(--green));
+  }
+  .options {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .option {
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.1);
+    border-radius:18px;
+    padding:14px;
+    font-size:clamp(16px,1.8vw,21px);
+    font-weight:800;
+    color:var(--text);
+    text-align:left;
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    min-height:92px;
+  }
+  .option:hover { transform:translateY(-1px); }
+  .option.disabled { pointer-events:none; opacity:.88; }
+  .option.correct { outline:2px solid var(--green); background:rgba(34,197,94,.18); }
+  .option.wrong { outline:2px solid var(--red); background:rgba(239,68,68,.18); }
+  .letter {
+    width:38px; height:38px; border-radius:12px;
+    background:rgba(255,255,255,.18);
+    display:grid; place-items:center; flex:0 0 auto;
+    font-size:19px; font-weight:900;
+  }
+  #feedback {
+    margin-top:14px;
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.08);
+    border-radius:18px;
+    padding:14px 16px;
+    font-size:clamp(14px,1.45vw,16px);
+    line-height:1.4;
+  }
+  .quizFooter {
+    margin-top:16px;
+    display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap;
+  }
+  .tiny { font-size:13px; color:var(--muted); }
+  .stats {
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px; margin:16px 0;
+  }
+  .stat {
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.1);
+    border-radius:18px;
+    padding:16px;
+  }
+  .stat strong {
+    display:block;
+    font-size:clamp(24px,3vw,38px);
+    margin-top:4px;
+  }
+  .reviewList {
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.08);
+    border-radius:18px;
+    padding:10px;
+  }
+  .reviewItem {
+    padding:12px; border-bottom:1px solid var(--line);
+  }
+  .reviewItem:last-child { border-bottom:none; }
+
+  /* Matching */
+  .matchingWrap {
+    display:grid;
+    grid-template-columns:1.05fr .95fr;
+    gap:16px;
+  }
+  .matchPanel {
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.08);
+    border-radius:20px;
+    padding:14px;
+  }
+  .matchPanelTitle {
+    font-size:18px;
+    font-weight:900;
+    margin-bottom:12px;
+  }
+  .matchRow {
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:12px;
+    align-items:center;
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.08);
+    border-radius:16px;
+    padding:12px;
+    margin-bottom:10px;
+  }
+  .matchLeft {
+    font-size:clamp(15px,1.6vw,17px);
+    line-height:1.35;
+    font-weight:700;
+  }
+   .matchSelect {
+    min-width:220px;
+    border-radius:14px;
+    border:1px solid var(--line);
+    background:rgba(13,43,76,.92);
+    color:#fff;
+    padding:12px 14px;
+    font-size:16px;
+    font-weight:800;
+  }
+  .matchChoice {
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.08);
+    border-radius:16px;
+    padding:12px;
+    margin-bottom:10px;
+    font-size:clamp(14px,1.45vw,16px);
+    line-height:1.35;
+  }
+  .matchChoice strong {
+    color:var(--blue);
+  }
+  .matchRow.correct { outline:2px solid var(--green); background:rgba(34,197,94,.16); }
+  .matchRow.wrong { outline:2px solid var(--red); background:rgba(239,68,68,.16); }
+
+  .overlayCenter {
+    height:100%;
+    display:grid; place-items:center;
+    text-align:center;
+  }
+  .overlayBox {
+    max-width:760px;
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.12);
+    border-radius:24px;
+    padding:24px;
+  }
+  .alertReason {
+    margin-top:14px;
+    padding:14px;
+    border-radius:16px;
+    border:1px solid var(--line);
+    background:rgba(255,255,255,.08);
+    text-align:left;
+    font-size:14px;
+    line-height:1.45;
+  }
+  .alertReason strong { color: var(--red); }
+  .alertNote { margin-top:10px; font-size:13px; color:var(--muted); line-height:1.45; }
+
+  @media (max-width: 900px) {
+    .welcome, .matchingWrap { grid-template-columns:1fr; }
+    .options { grid-template-columns:1fr; }
+    .stats { grid-template-columns:1fr 1fr; }
+  }
+  @media (max-width: 640px) {
+    #app { padding:8px; }
+    .shell { width:calc(100vw - 16px); gap:8px; }
+    .topbar, .main { border-radius:20px; }
+    .main { padding:12px; }
+    .hero { font-size:clamp(25px,8vw,38px); }
+    #questionText { font-size:clamp(18px,5.2vw,24px); }
+    .option { min-height:72px; font-size:clamp(15px,4.6vw,19px); padding:11px; }
+    .letter { width:34px; height:34px; font-size:16px; }
+    .lead { font-size:14px; }
+    .item { font-size:14px; }
+    .matchLeft, .matchChoice { font-size:14px; }
+    .matchSelect { font-size:15px; padding:11px 12px; }
+    #feedback { font-size:14px; }
+    .stats { grid-template-columns:1fr; }
+    .matchRow { grid-template-columns:1fr; }
+    .matchSelect { min-width:100%; width:100%; }
+    button { width:100%; }
+  }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div id="app">
+  <div class="shell">
+    <div class="topbar">
+      <div>
+        <div class="title">Future Challenge: <span class="accent-blue">WILL</span> vs <span class="accent-green">GOING</span> <span class="accent-red">TO</span></div>
+        <div class="subtitle">A1 interactive platform • 80-question bank • 25 random items • mixed flow: multiple choice + conversations + real matching</div>
+      </div>
+      <div class="pillbar">
+        <div class="pill" id="pillProgress">Question 0 / 25</div>
+        <div class="pill" id="pillScore">Score: 0</div>
+        <div class="pill" id="pillTime">Time: 00:00</div>
+      </div>
+    </div>
+
+    <div class="main">
+      <section class="screen active" id="screenStart">
+        <div class="welcome">
+          <div class="panel">
+            <h1 class="hero">Choose the best future form through <span class="accent-blue">context</span>, <span class="accent-green">dialogue</span>, and <span class="accent-red">matching</span>.</h1>
+            <div class="lead">
+              This version includes <strong>multiple choice</strong>, <strong>more contextual conversations</strong>, and <strong>real matching in two columns</strong>.
+              Students answer only <strong>25 random questions</strong> from a pool of <strong>80</strong>.
+            </div>
+            <div class="buttonRow">
+              <button id="btnStart">Start 25-Question Test</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="item"><strong>Decision now / spontaneous offer</strong> → usually <strong>WILL</strong></div>
+            <div class="item"><strong>Plan before / intention</strong> → usually <strong>GOING TO</strong></div>
+            <div class="item"><strong>Opinion / guess</strong> → usually <strong>WILL</strong></div>
+            <div class="item"><strong>Visible evidence now</strong> → usually <strong>GOING TO</strong></div>
+            <div class="item"><strong>Time per question:</strong> 120 seconds</div>
+            <div class="item"><strong>Matching mode:</strong> choose the best match from the right column for each item on the left.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screenQuiz">
+        <div class="questionMeta">
+          <div class="pill" id="qTag">Category</div>
+          <div class="pill" id="qNumber">Item 1 of 25</div>
+          <div class="pill" id="qStreak">Streak: 0</div>
+        </div>
+        <div id="questionText">Question text</div>
+        <div class="meter"><div id="timeBar"></div></div>
+        <div id="questionArea"></div>
+        <div id="feedback">Choose the best answer according to the context.</div>
+        <div class="quizFooter">
+          <div class="tiny">Tip: ask first: <strong>decision now</strong>, <strong>plan before</strong>, <strong>opinion</strong>, or <strong>evidence</strong>.</div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button id="btnCheckMatch" style="display:none;">Check Matching</button>
+            <button class="secondary" id="btnNext" style="display:none;">Next Question</button>
+            <button class="secondary" id="btnFinish" style="display:none;">Finish Test</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screenResult">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+          <div>
+            <div style="font-size:clamp(26px,4vw,42px); font-weight:900;">Results</div>
+            <div class="subtitle">Review the score and the missed items.</div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button id="btnRestart">Restart</button>
+            <button class="secondary" id="btnPrint">Print / Save PDF</button>
+          </div>
+        </div>
+        <div class="stats">
+          <div class="stat"><span class="subtitle">Correct answers</span><strong id="resCorrect">0/25</strong></div>
+          <div class="stat"><span class="subtitle">Final grade</span><strong id="resGrade">1.0</strong></div>
+          <div class="stat"><span class="subtitle">Accuracy</span><strong id="resAcc">0%</strong></div>
+          <div class="stat"><span class="subtitle">Infractions</span><strong id="resFlags">0</strong></div>
+        </div>
+        <div class="reviewList" id="reviewList"></div>
+      </section>
+
+      <section class="screen" id="screenOverlay">
+        <div class="overlayCenter">
+          <div class="overlayBox">
+            <div style="font-size:clamp(24px,3.5vw,38px); font-weight:900; margin-bottom:12px;">Academic Integrity Warning</div>
+            <div id="overlayText" class="lead" style="margin-bottom:0;">A restricted action was detected.</div>
+            <div class="alertReason" id="overlayReasonBox">
+              <strong>Detected issue:</strong> <span id="overlayReason">Unknown action</span><br>
+              <strong>Action taken:</strong> 8-second penalty applied to the current question.
+            </div>
+            <div class="alertNote">
+              Detectable reasons include: tab change, minimizing the page, exiting fullscreen, and restricted keyboard shortcuts.
+              Screenshot or screen-recording detection is not reliable in a normal browser page.
+            </div>
+            <div class="buttonRow" style="justify-content:center;">
+              <button id="btnContinue">Continue</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+const questionBank = [{"type": "mcq", "prompt": "The phone is ringing. I ___ answer it.", "options": ["will", "am going to", "going", "will to"], "answer": 0, "reason": "This is a decision made now.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "We already bought the tickets. We ___ travel on Friday.", "options": ["will", "are going to", "going", "will to"], "answer": 1, "reason": "This is a plan decided before speaking.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "Look at the black clouds! It ___ rain.", "options": ["will", "is going to", "going", "rains"], "answer": 1, "reason": "The speaker sees evidence now.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "I think my teacher ___ like my project.", "options": ["will", "is going to", "going", "likes"], "answer": 0, "reason": "This is a personal opinion or prediction.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "A: I forgot my pen. B: I ___ lend you mine.", "options": ["will", "am going to", "going", "will to"], "answer": 0, "reason": "This is a spontaneous offer.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "She has her suitcase ready. She ___ visit her aunt tomorrow.", "options": ["will", "is going to", "going", "visits"], "answer": 1, "reason": "The intention was made before.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "Maybe they ___ arrive late.", "options": ["will", "are going to", "going", "arrived"], "answer": 0, "reason": "Maybe usually introduces a guess.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "Watch out! You ___ fall!", "options": ["will", "are going to", "going", "fell"], "answer": 1, "reason": "The danger is visible right now.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "I saved money for months. I ___ buy a new phone.", "options": ["will", "am going to", "going", "will buying"], "answer": 1, "reason": "This is a previous plan.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "Someone is at the door. I ___ open it.", "options": ["will", "am going to", "going", "open"], "answer": 0, "reason": "It is a decision in the moment.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "Probably she ___ like the gift.", "options": ["will", "is going to", "going", "liked"], "answer": 0, "reason": "Probably shows an opinion.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "The bus is very full. We ___ be late.", "options": ["will", "are going to", "going", "late"], "answer": 1, "reason": "There is evidence in the situation.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "They booked a table. They ___ eat at that restaurant tonight.", "options": ["will", "are going to", "going", "eat"], "answer": 1, "reason": "The event is already arranged.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "A: We need music. B: I ___ play a song.", "options": ["will", "am going to", "going", "played"], "answer": 0, "reason": "This is a spontaneous response.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "I guess your team ___ win.", "options": ["will", "is going to", "going", "wins"], "answer": 0, "reason": "I guess shows a prediction or opinion.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "The child is very sleepy. He ___ fall asleep.", "options": ["will", "is going to", "going", "slept"], "answer": 1, "reason": "The speaker sees signs now.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "We talked yesterday. We ___ meet after class.", "options": ["will", "are going to", "going", "will to"], "answer": 1, "reason": "The plan existed before the conversation.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "A: I am thirsty. B: I ___ get you some water.", "options": ["will", "am going to", "going", "am"], "answer": 0, "reason": "This is an offer made now.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "Maybe it ___ be sunny later.", "options": ["will", "is going to", "going", "sunny"], "answer": 0, "reason": "This is only a guess.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "Our bags are packed. We ___ leave early tomorrow.", "options": ["will", "are going to", "going", "to leave"], "answer": 1, "reason": "Everything is ready, so it is a plan.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "Which sentence is correct?", "options": ["Will she call later?", "Does she will call later?", "Will she calls later?", "She will call later?"], "answer": 0, "reason": "This is the correct question form with WILL.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "Which sentence is correct?", "options": ["Are they going to study tonight?", "Do they going to study tonight?", "Going they to study tonight?", "Are they go to study tonight?"], "answer": 0, "reason": "This is the correct question form with GOING TO.", "category": "Multiple Choice"}, {"type": "conversation", "prompt": "Situation: During the break, Laura hears the classroom phone ringing. The teacher is busy writing on the board.\nDialogue:\nLaura: The phone is ringing.\nMateo: Don't worry. I ___ answer it.", "options": ["will", "am going to", "going", "answered"], "answer": 0, "reason": "Mateo decides at that moment.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: Two friends are looking out the window before lunch. The sky is very dark and there is thunder.\nDialogue:\nSofía: Wow, the sky looks terrible.\nDaniel: Yes, it ___ rain very soon.", "options": ["will", "is going to", "going", "rains"], "answer": 1, "reason": "There is visible evidence in the sky.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: Camila is carrying a suitcase and her passport. She is leaving after class.\nDialogue:\nAndrés: Why do you have your suitcase?\nCamila: Because I ___ travel tonight.", "options": ["will", "am going to", "going", "travels"], "answer": 1, "reason": "She already has a plan and preparations.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: The students are talking about tomorrow's soccer game, but they do not have evidence, only opinions.\nDialogue:\nFelipe: What do you think about the game tomorrow?\nSara: I think our team ___ win.", "options": ["will", "is going to", "going", "won"], "answer": 0, "reason": "This is a personal prediction.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: In class, a student drops all his books on the floor.\nDialogue:\nNico: Oh no! My books!\nPaula: Wait, I ___ help you pick them up.", "options": ["will", "am going to", "going", "helped"], "answer": 0, "reason": "Paula offers help immediately.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: Ana and her cousin organized a family dinner yesterday. Everything is already prepared.\nDialogue:\nTomás: What are your plans for tonight?\nAna: We ___ have dinner with my cousins at home.", "options": ["will", "are going to", "going", "having"], "answer": 1, "reason": "The dinner was planned before speaking.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: A mother sees her little son standing on a chair near a table.\nDialogue:\nMother: Be careful!\nAunt: Yes, he ___ fall if nobody helps him.", "options": ["will", "is going to", "going", "fell"], "answer": 1, "reason": "The risk is visible now.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: The class is talking about a science project. María is not sure, but she feels positive.\nDialogue:\nTeacher: Will your group finish on time?\nMaría: Yes, I think we ___ finish it today.", "options": ["will", "are going to", "going", "finished"], "answer": 0, "reason": "It is an opinion, not a visible sign.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: David forgot his notebook. His classmate reacts immediately.\nDialogue:\nDavid: I forgot my notebook at home.\nLucía: It's okay. I ___ share mine with you.", "options": ["will", "am going to", "going", "shared"], "answer": 0, "reason": "This is a spontaneous offer.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: Julia has a study schedule on her desk and a list of topics for the weekend.\nDialogue:\nBrother: Why is your desk so organized?\nJulia: Because I ___ study all weekend for the test.", "options": ["will", "am going to", "going", "studied"], "answer": 1, "reason": "The plan already exists.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: The class sees black smoke outside the window near the food stand.\nDialogue:\nMiguel: Look at that smoke!\nTeacher: The hamburgers ___ burn if they do not turn them now.", "options": ["will", "are going to", "going", "burned"], "answer": 1, "reason": "The sign is visible at the moment.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: Two classmates are talking about a new teacher. They have not met her yet.\nDialogue:\nElena: Do you think the new teacher will be strict?\nJuan: I think she ___ be friendly.", "options": ["will", "is going to", "going", "is"], "answer": 0, "reason": "This is only an opinion.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: Mateo sees his friend sweating and carrying sports clothes after school.\nDialogue:\nMateo: Why are you carrying your sports bag?\nFriend: Because I ___ play basketball after class.", "options": ["will", "am going to", "going", "plays"], "answer": 1, "reason": "The activity is planned already.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: In the computer room, the lights suddenly go out.\nDialogue:\nStudent: The room is dark.\nMonitor: I ___ turn on the emergency light.", "options": ["will", "am going to", "going", "turning"], "answer": 0, "reason": "The decision happens now.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: The class is discussing the school festival next month. Tickets and posters are already ready.\nDialogue:\nTeacher: What is the drama club doing next month?\nStudent: We ___ present a play at the festival.", "options": ["will", "are going to", "going", "presented"], "answer": 1, "reason": "The event has already been organized.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: Sara watches her little sister walking with a full glass of juice close to the sofa.\nDialogue:\nSara: Oh no... she ___ drop the juice on the sofa.", "options": ["will", "is going to", "going", "dropped"], "answer": 1, "reason": "The speaker can see signs of what may happen.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: Two students are guessing what the exam will be like. They have no evidence.\nDialogue:\nCarlos: Do you think the exam will be hard?\nValeria: No, I think it ___ be easy.", "options": ["will", "is going to", "going", "was"], "answer": 0, "reason": "It is a prediction based on opinion.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: The school bus is late and a student looks worried.\nDialogue:\nStudent: I don't have a charger and my phone is at 2%.\nFriend: Relax. I ___ lend you mine.", "options": ["will", "am going to", "going", "lent"], "answer": 0, "reason": "This is an immediate offer.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: A student sees a poster with the words 'Family Picnic on Sunday' and remembers the plan.\nDialogue:\nStudent: Oh right, on Sunday we ___ go to the picnic with our families.", "options": ["will", "are going to", "going", "went"], "answer": 1, "reason": "The picnic is a previous arrangement.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: The teacher asks the class about the movie adaptation of a book. Students are only giving opinions.\nDialogue:\nTeacher: Do you think the movie will be interesting?\nAna: Yes, I think it ___ be great.", "options": ["will", "is going to", "going", "was"], "answer": 0, "reason": "This is an opinion about the future.", "category": "Conversation"}, {"type": "matching", "prompt": "Match each situation on the left with the best idea on the right.", "left": ["The speaker decides now.", "The speaker has a previous plan.", "The speaker sees evidence now."], "right": ["opinion / guess", "decision now", "plan before", "prediction with evidence"], "mapping": [1, 2, 3], "reason": "Choose the meaning that matches each situation.", "category": "Matching"}, {"type": "matching", "prompt": "Match each clue with the best future form.", "left": ["I think / maybe / probably", "tickets ready / calendar / suitcase", "phone ringing / quick offer / sudden decision"], "right": ["GOING TO", "WILL"], "mapping": [1, 0, 1], "reason": "Opinion clues usually go with WILL, and previous plans usually go with GOING TO.", "category": "Matching"}, {"type": "matching", "prompt": "Match each mini-situation with the correct sentence.", "left": ["A classmate forgot a pencil and you react now.", "You bought tickets yesterday for Friday.", "You see black clouds and thunder."], "right": ["We are going to travel on Friday.", "I will lend you mine.", "It is going to rain."], "mapping": [1, 0, 2], "reason": "Each sentence should match the situation logically.", "category": "Matching"}, {"type": "matching", "prompt": "Match each purpose with the correct form.", "left": ["spontaneous offer", "prior intention", "personal prediction"], "right": ["I think she will come.", "I am going to visit my aunt.", "I will carry your bag."], "mapping": [2, 1, 0], "reason": "Think about purpose first, then grammar.", "category": "Matching"}, {"type": "matching", "prompt": "Match the question with the correct answer.", "left": ["Why do you have a suitcase?", "What will you do? The room is dark.", "Do you think our team can win?"], "right": ["I think we will win.", "I am going to travel tonight.", "I will turn on the light."], "mapping": [1, 2, 0], "reason": "Each answer depends on the context.", "category": "Matching"}, {"type": "matching", "prompt": "Match the sentence beginning with the correct ending.", "left": ["I think the exam...", "Look! The baby...", "We already planned it, so we..."], "right": ["...are going to visit the museum tomorrow.", "...will be easy.", "...is going to cry."], "mapping": [1, 2, 0], "reason": "Use clues from context and intention.", "category": "Matching"}, {"type": "matching", "prompt": "Match the clue with the type of meaning.", "left": ["Look!", "I think...", "We planned it yesterday."], "right": ["visible evidence", "previous plan", "opinion"], "mapping": [0, 2, 1], "reason": "These are the classic clues for WILL vs GOING TO.", "category": "Matching"}, {"type": "matching", "prompt": "Match each context with the best complete sentence.", "left": ["Your friend drops books and you help now.", "You see a plate near the edge of the table.", "Your family organized dinner for Sunday."], "right": ["It is going to fall.", "We are going to have dinner together.", "I will help you pick them up."], "mapping": [2, 0, 1], "reason": "Read the whole context before matching.", "category": "Matching"}, {"type": "matching", "prompt": "Match each purpose with the correct sentence structure.", "left": ["question with WILL", "question with GOING TO", "negative with GOING TO"], "right": ["Will she call later?", "Are they going to study tonight?", "He is not going to come."], "mapping": [0, 1, 2], "reason": "Focus on form and structure.", "category": "Matching"}, {"type": "matching", "prompt": "Match each speaker intention with the best sentence.", "left": ["promise made now", "trip arranged before", "guess without evidence"], "right": ["I will wait for you.", "I think they will arrive late.", "We are going to travel next week."], "mapping": [0, 2, 1], "reason": "Meaning first, then form.", "category": "Matching"}, {"type": "matching", "prompt": "Match each sentence with its meaning.", "left": ["I will call her tonight.", "I am going to call her tonight.", "It is going to rain."], "right": ["decision now", "plan before", "prediction with evidence"], "mapping": [0, 1, 2], "reason": "These are the core meanings of the unit.", "category": "Matching"}, {"type": "matching", "prompt": "Match each clue in the dialogue with the best choice.", "left": ["'Don't worry, I ___ help you.'", "'We already chose the date, so we ___ visit them.'", "'Look at the sky! It ___ storm.'"], "right": ["are going to", "will", "is going to"], "mapping": [1, 0, 2], "reason": "The clue tells you which form to choose.", "category": "Matching"}, {"type": "matching", "prompt": "Match each short text with the best idea.", "left": ["'I think the movie will be good.'", "'We packed our bags yesterday.'", "'Watch out! The glass is near the edge.'"], "right": ["evidence", "plan", "opinion"], "mapping": [2, 1, 0], "reason": "Identify whether the text shows opinion, plan, or evidence.", "category": "Matching"}, {"type": "matching", "prompt": "Match each school context with the best response.", "left": ["The teacher asks for a volunteer and you decide now.", "Your club already has posters for next week's event.", "You see rain clouds during break."], "right": ["It is going to rain soon.", "I will do it.", "We are going to present our event."], "mapping": [1, 2, 0], "reason": "School context can also show meaning clearly.", "category": "Matching"}, {"type": "matching", "prompt": "Match each phrase with the future form it usually introduces.", "left": ["I think", "already planned", "right now, I can help"], "right": ["GOING TO", "WILL"], "mapping": [1, 0, 1], "reason": "These phrase clues are useful in tests.", "category": "Matching"}, {"type": "matching", "prompt": "Match each sentence half correctly.", "left": ["I think she...", "He is going to...", "I will..."], "right": ["...answer the phone now.", "...visit his grandmother tomorrow.", "...will like the class."], "mapping": [2, 1, 0], "reason": "Find the ending that makes sense.", "category": "Matching"}, {"type": "matching", "prompt": "Match each everyday situation with the main reason for the form.", "left": ["You react to the ringing phone.", "You see lightning and hear thunder.", "You bought the tickets last week."], "right": ["evidence now", "decision now", "plan before"], "mapping": [1, 0, 2], "reason": "Tests often hide this reason inside a context.", "category": "Matching"}, {"type": "matching", "prompt": "Match the idea with the correct example.", "left": ["opinion", "spontaneous offer", "planned action"], "right": ["I think our class will win.", "I will carry that box for you.", "We are going to meet after school."], "mapping": [0, 1, 2], "reason": "Each example represents a different use.", "category": "Matching"}, {"type": "mcq", "prompt": "My mom wrote it on the family calendar. We ___ visit my grandmother on Sunday.", "options": ["will", "are going to", "going", "will to"], "answer": 1, "reason": "A family calendar shows a previous plan.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "I hear someone crying outside. I ___ check what happened.", "options": ["will", "am going to", "going", "checked"], "answer": 0, "reason": "This is a decision made at the moment.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "Look at that tree! It ___ fall in the wind.", "options": ["will", "is going to", "going", "fell"], "answer": 1, "reason": "The speaker sees evidence now.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "I think our English class ___ be fun today.", "options": ["will", "is going to", "going", "was"], "answer": 0, "reason": "I think introduces an opinion.", "category": "Multiple Choice"}, {"type": "conversation", "prompt": "Situation: The school festival is next Friday. The students already printed posters and bought decorations.\\nDialogue:\\nTeacher: Are you ready for the festival?\\nStudent: Yes, we ___ decorate the main hall on Friday morning.", "options": ["will", "are going to", "going", "decorated"], "answer": 1, "reason": "The preparations show a previous plan.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: During class, a marker falls under the teacher's desk.\\nDialogue:\\nTeacher: I can't reach it.\\nStudent: Don't worry, I ___ pick it up for you.", "options": ["will", "am going to", "going", "picked"], "answer": 0, "reason": "The student offers help immediately.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: Two classmates are watching the weather through the window before P.E. class.\\nDialogue:\\nLina: The wind is very strong.\\nPedro: Yes, it ___ be difficult to play outside.", "options": ["will", "is going to", "going", "was"], "answer": 1, "reason": "The present situation gives visible evidence.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: The class is talking about a singer coming to town, but they only have their personal ideas.\\nDialogue:\\nMarta: Do you think the concert ___ be good?\\nLuis: Yes, I think it ___ be amazing.", "options": ["will", "is going to", "going", "was"], "answer": 0, "reason": "This is a personal opinion.", "category": "Conversation"}, {"type": "matching", "prompt": "Match each clue with the best meaning.", "left": ["The speaker says: 'I think...'", "The speaker says: 'Look!'", "The speaker says: 'We already planned it.'"], "right": ["previous plan", "visible evidence", "opinion"], "mapping": [2, 1, 0], "reason": "Each clue usually signals a different use.", "category": "Matching"}, {"type": "matching", "prompt": "Match each everyday context with the best response.", "left": ["Your teacher drops some papers and you react now.", "Your family bought tickets yesterday.", "You see dark clouds over the school."], "right": ["We are going to travel tomorrow.", "I will help you pick them up.", "It is going to rain."], "mapping": [1, 0, 2], "reason": "Use the context to choose the correct future meaning.", "category": "Matching"}, {"type": "matching", "prompt": "Match each form with its main function.", "left": ["WILL for an instant response", "GOING TO for a previous arrangement", "GOING TO for a prediction"], "right": ["plan before speaking", "prediction with evidence", "decision now"], "mapping": [2, 0, 1], "reason": "The same form can change meaning depending on context.", "category": "Matching"}, {"type": "matching", "prompt": "Match each short sentence with the correct explanation.", "left": ["I will answer it.", "We are going to meet after school.", "It is going to rain."], "right": ["They arranged it before.", "There are clear signs now.", "The decision happens now."], "mapping": [2, 0, 1], "reason": "Meaning comes from intention and evidence.", "category": "Matching"}, {"type": "mcq", "prompt": "Choose the correct negative sentence.", "options": ["He isn't going to come.", "He don't going to come.", "He won't going come.", "He not going to come."], "answer": 0, "reason": "This is the correct negative form with GOING TO.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "Choose the correct sentence for a quick promise.", "options": ["I am going to wait for you.", "I will wait for you.", "I waiting for you.", "I will to wait for you."], "answer": 1, "reason": "A promise made now usually takes WILL.", "category": "Multiple Choice"}, {"type": "mcq", "prompt": "We can see smoke from the kitchen. The food ___ burn if nobody checks it.", "options": ["will", "is going to", "going", "burned"], "answer": 1, "reason": "Smoke is visible evidence.", "category": "Multiple Choice"}, {"type": "conversation", "prompt": "Situation: A student asks about weekend plans. His friend already organized everything with the family.\\nDialogue:\\nSamuel: What are you doing this weekend?\\nIván: We ___ visit my uncle in Buesaco. My parents already talked to him.", "options": ["will", "are going to", "going", "visited"], "answer": 1, "reason": "The family arrangement was made before speaking.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: A student sees a classmate carrying a heavy box of books.\\nDialogue:\\nClassmate: This box is really heavy.\\nYou: Okay, I ___ carry one side.", "options": ["will", "am going to", "going", "carried"], "answer": 0, "reason": "You make the offer in that exact moment.", "category": "Conversation"}, {"type": "conversation", "prompt": "Situation: Two friends are looking at a football match on TV. They do not have clear evidence, only feelings.\\nDialogue:\\nFriend 1: Do you think our team ___ win?\\nFriend 2: Yes, I think they ___ play better in the second half.", "options": ["will", "are going to", "going", "played"], "answer": 0, "reason": "The speakers are expressing opinions.", "category": "Conversation"}, {"type": "matching", "prompt": "Match each school situation with the best sentence.", "left": ["The bell rings and you decide to close your notebook now.", "The class trip is already on the school calendar.", "You see your friend near a wet floor and slipping."], "right": ["We are going to go on the class trip next month.", "I will close my notebook now.", "She is going to fall."], "mapping": [1, 0, 2], "reason": "Think about whether the meaning is decision, plan, or evidence.", "category": "Matching"}, {"type": "matching", "prompt": "Match each phrase with the future form it usually suggests.", "left": ["maybe / probably / I think", "already decided / arranged", "instant offer / quick decision"], "right": ["GOING TO", "WILL"], "mapping": [1, 0, 1], "reason": "These clue phrases help students choose quickly in a test.", "category": "Matching"}];
+const LETTERS = ["A","B","C","D"];
+
+let selectedQuestions = [];
+let currentIndex = 0;
+let score = 0;
+let streak = 0;
+let answered = false;
+let clock = null;
+let questionTick = null;
+let totalSeconds = 0;
+let questionSeconds = 120;
+let remaining = 120;
+let infractions = 0;
+let review = [];
+let launched = false;
+let pendingAutoSkip = false;
+
+const screens = {
+  start: document.getElementById("screenStart"),
+  quiz: document.getElementById("screenQuiz"),
+  result: document.getElementById("screenResult"),
+  overlay: document.getElementById("screenOverlay")
+};
+
+function showScreen(name) {
+  Object.values(screens).forEach(s => s.classList.remove("active"));
+  screens[name].classList.add("active");
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function cloneQuestion(q) {
+  if (q.type === "matching") {
+    const rightWithIndex = q.right.map((text, index) => ({ text, index }));
+    const shuffledRight = shuffle(rightWithIndex);
+    const indexMap = new Map(shuffledRight.map((item, newIndex) => [item.index, newIndex]));
+    return {
+      ...q,
+      right: shuffledRight.map(item => item.text),
+      mapping: q.mapping.map(originalIndex => indexMap.get(originalIndex))
+    };
+  }
+  const idx = shuffle([0,1,2,3]);
+  return {
+    ...q,
+    options: idx.map(i => q.options[i]),
+    answer: idx.indexOf(q.answer)
+  };
+}
+
+
+function pickQuestions() {
+  const bank = shuffle(questionBank).map(cloneQuestion);
+  const buckets = {
+    mcq: bank.filter(q => q.type === "mcq"),
+    conversation: bank.filter(q => q.type === "conversation"),
+    matching: bank.filter(q => q.type === "matching")
+  };
+  const result = [];
+  let lastType = null;
+  let sameTypeCount = 0;
+
+  while (result.length < 25) {
+    const availableTypes = Object.keys(buckets).filter(t => buckets[t].length > 0);
+    let candidates = availableTypes;
+
+    if (sameTypeCount >= 1) {
+      const filtered = availableTypes.filter(t => t !== lastType);
+      if (filtered.length > 0) candidates = filtered;
+    }
+
+    // slight balancing: prioritize the types with more remaining items
+    candidates.sort((a, b) => buckets[b].length - buckets[a].length);
+
+    // choose among top remaining candidates with randomness
+    const topPool = candidates.slice(0, Math.min(2, candidates.length));
+    const chosenType = topPool[Math.floor(Math.random() * topPool.length)];
+
+    const nextItem = buckets[chosenType].shift();
+    result.push(nextItem);
+
+    if (chosenType === lastType) sameTypeCount++;
+    else {
+      lastType = chosenType;
+      sameTypeCount = 0;
+    }
+  }
+  return result;
+}
+
+
+function formatTime(s) {
+  const m = String(Math.floor(s/60)).padStart(2,"0");
+  const sec = String(s%60).padStart(2,"0");
+  return `${m}:${sec}`;
+}
+
+function updateTop() {
+  document.getElementById("pillProgress").textContent = `Question ${Math.min(currentIndex + (screens.quiz.classList.contains("active") ? 1 : 0), selectedQuestions.length || 25)} / ${selectedQuestions.length || 25}`;
+  document.getElementById("pillScore").textContent = `Score: ${score}`;
+  document.getElementById("pillTime").textContent = `Time: ${formatTime(totalSeconds)}`;
+}
+
+function calcGrade(correct, total) {
+  let g = 1 + (correct / total) * 4;
+  g = Math.max(1, Math.min(5, g));
+  return g.toFixed(1);
+}
+
+function requestFull() {
+  const el = document.documentElement;
+  if (el.requestFullscreen) el.requestFullscreen().catch(()=>{});
+}
+
+function startQuiz() {
+  selectedQuestions = pickQuestions();
+  currentIndex = 0;
+  score = 0;
+  streak = 0;
+  answered = false;
+  totalSeconds = 0;
+  infractions = 0;
+  review = [];
+  launched = true;
+  showScreen("quiz");
+  requestFull();
+  startClock();
+  renderQuestion();
+}
+
+function startClock() {
+  clearInterval(clock);
+  clock = setInterval(() => {
+    totalSeconds++;
+    updateTop();
+  }, 1000);
+}
+
+function startQuestionTimer() {
+  clearInterval(questionTick);
+  remaining = questionSeconds;
+  updateTimeBar();
+  questionTick = setInterval(() => {
+    remaining--;
+    updateTimeBar();
+    if (remaining <= 0) {
+      clearInterval(questionTick);
+      if (!answered) processAnswer(-1);
+    }
+  }, 1000);
+}
+
+function updateTimeBar() {
+  const pct = Math.max(0, (remaining / questionSeconds) * 100);
+  const bar = document.getElementById("timeBar");
+  bar.style.width = pct + "%";
+  bar.style.background = pct < 30 ? "linear-gradient(90deg, #f59e0b, #ef4444)" : "linear-gradient(90deg, var(--blue), var(--green))";
+}
+
+function renderQuestion() {
+  answered = false;
+  document.getElementById("btnNext").style.display = "none";
+  document.getElementById("btnFinish").style.display = "none";
+  document.getElementById("btnCheckMatch").style.display = "none";
+
+  const q = selectedQuestions[currentIndex];
+  document.getElementById("qTag").textContent = q.category;
+  document.getElementById("qNumber").textContent = `Item ${currentIndex + 1} of ${selectedQuestions.length}`;
+  document.getElementById("qStreak").textContent = `Streak: ${streak}`;
+  document.getElementById("questionText").innerHTML = q.prompt.replace(/\n/g, "<br>");
+  document.getElementById("feedback").innerHTML = q.type === "matching"
+    ? "Match each item on the left with the best option on the right, then press Check Matching."
+    : "Choose the best answer according to the context.";
+
+  const area = document.getElementById("questionArea");
+  area.innerHTML = "";
+
+  if (q.type === "mcq" || q.type === "conversation") {
+    const box = document.createElement("div");
+    box.className = "options";
+    q.options.forEach((opt, i) => {
+      const btn = document.createElement("button");
+      btn.className = "option";
+      btn.innerHTML = `<div class="letter">${LETTERS[i]}</div><div>${opt}</div>`;
+      btn.onclick = () => processAnswer(i);
+      box.appendChild(btn);
+    });
+    area.appendChild(box);
+  } else if (q.type === "matching") {
+    const wrap = document.createElement("div");
+    wrap.className = "matchingWrap";
+
+    const leftPanel = document.createElement("div");
+    leftPanel.className = "matchPanel";
+    leftPanel.innerHTML = `<div class="matchPanelTitle">Left column: situations / clues</div>`;
+
+    q.left.forEach((leftText, i) => {
+      const row = document.createElement("div");
+      row.className = "matchRow";
+      row.dataset.row = i;
+      row.innerHTML = `
+        <div class="matchLeft"><strong>${i+1}.</strong> ${leftText}</div>
+        <select class="matchSelect" data-index="${i}">
+          <option value="">Select a match</option>
+          ${q.right.map((rt, j) => `<option value="${j}">${String.fromCharCode(65+j)}. ${rt}</option>`).join("")}
+        </select>
+      `;
+      leftPanel.appendChild(row);
+    });
+
+    const rightPanel = document.createElement("div");
+    rightPanel.className = "matchPanel";
+    rightPanel.innerHTML = `<div class="matchPanelTitle">Right column: possible matches</div>`;
+    q.right.forEach((choice, i) => {
+      const card = document.createElement("div");
+      card.className = "matchChoice";
+      card.innerHTML = `<strong>${String.fromCharCode(65+i)}.</strong> ${choice}`;
+      rightPanel.appendChild(card);
+    });
+
+    wrap.appendChild(leftPanel);
+    wrap.appendChild(rightPanel);
+    area.appendChild(wrap);
+    document.getElementById("btnCheckMatch").style.display = "inline-flex";
+  }
+
+  startQuestionTimer();
+  updateTop();
+}
+
+function processAnswer(choice, securityReason = '') {
+  if (answered) return;
+  answered = true;
+  clearInterval(questionTick);
+  const q = selectedQuestions[currentIndex];
+
+  if (q.type === "matching") {
+    const rows = [...document.querySelectorAll(".matchRow")];
+    const selects = [...document.querySelectorAll(".matchSelect")];
+    let allAnswered = selects.every(sel => sel.value !== "");
+    if (choice !== -1 && !allAnswered) {
+      answered = false;
+      document.getElementById("feedback").innerHTML = "<strong>Please complete all the matches</strong> before checking your answer.";
+      startQuestionTimer();
+      return;
+    }
+
+    let ok = true;
+    let yourAnswerParts = [];
+    let correctParts = [];
+    rows.forEach((row, i) => {
+      const sel = selects[i];
+      sel.disabled = true;
+      const selectedVal = sel.value === "" ? null : Number(sel.value);
+      const correctVal = q.mapping[i];
+      yourAnswerParts.push(`${i+1} → ${selectedVal === null ? "No answer" : String.fromCharCode(65+selectedVal)}`);
+      correctParts.push(`${i+1} → ${String.fromCharCode(65+correctVal)}`);
+      if (selectedVal === correctVal) {
+        row.classList.add("correct");
+      } else {
+        row.classList.add("wrong");
+        ok = false;
+      }
+    });
+
+    if (choice === -1) {
+      streak = 0;
+      document.getElementById("feedback").innerHTML = "<strong>Your time is over.</strong> Please push <strong>Next Question</strong> to continue.";
+    } else if (choice === -2) {
+      streak = 0;
+      document.getElementById("feedback").innerHTML = `<strong>Security alert.</strong> ${securityReason || "You left the activity."} This item was marked as incorrect.`;
+    } else if (ok) {
+      score++;
+      streak++;
+      document.getElementById("feedback").innerHTML = `<strong>Correct.</strong> ${q.reason}`;
+    } else {
+      streak = 0;
+      document.getElementById("feedback").innerHTML = "<strong>Not correct.</strong> Review the context and continue.";
+    }
+
+    review.push({
+      prompt:q.prompt,
+      yourAnswer: yourAnswerParts.join(" | "),
+      correctAnswer: correctParts.join(" | "),
+      reason:q.reason,
+      ok: choice !== -1 && ok
+    });
+  } else {
+    const opts = [...document.querySelectorAll(".option")];
+    opts.forEach(el => el.classList.add("disabled"));
+    if (choice >= 0 && opts[choice]) opts[choice].classList.add(choice === q.answer ? "correct" : "wrong");
+    if (choice >= 0 && choice === q.answer) {
+      score++;
+      streak++;
+      document.getElementById("feedback").innerHTML = `<strong>Correct.</strong> ${q.reason}`;
+    } else if (choice === -1) {
+      streak = 0;
+      document.getElementById("feedback").innerHTML = `<strong>Your time is over.</strong> Please push <strong>Next Question</strong> to continue.`;
+    } else {
+      streak = 0;
+      if (opts[q.answer]) opts[q.answer].classList.add("correct");
+      document.getElementById("feedback").innerHTML = `<strong>Not correct.</strong> Review the context and continue.`;
+    }
+    review.push({
+      prompt:q.prompt,
+      yourAnswer: choice >= 0 ? `${LETTERS[choice]}. ${q.options[choice]}` : "No answer",
+      correctAnswer: `${LETTERS[q.answer]}. ${q.options[q.answer]}`,
+      reason:q.reason,
+      ok: choice === q.answer && choice !== -2
+    });
+  }
+
+  document.getElementById("qStreak").textContent = `Streak: ${streak}`;
+  if (currentIndex === selectedQuestions.length - 1) document.getElementById("btnFinish").style.display = "inline-flex";
+  else document.getElementById("btnNext").style.display = "inline-flex";
+  document.getElementById("btnCheckMatch").style.display = "none";
+  updateTop();
+}
+
+function nextQuestion() {
+  currentIndex++;
+  if (currentIndex >= selectedQuestions.length) finishQuiz();
+  else renderQuestion();
+}
+
+function finishQuiz() {
+  clearInterval(clock);
+  clearInterval(questionTick);
+  showScreen("result");
+  const total = selectedQuestions.length;
+  document.getElementById("resCorrect").textContent = `${score}/${total}`;
+  document.getElementById("resGrade").textContent = calcGrade(score, total);
+  document.getElementById("resAcc").textContent = Math.round((score/total)*100) + "%";
+  document.getElementById("resFlags").textContent = infractions;
+  document.getElementById("reviewList").innerHTML = review.map((r, i) => `
+    <div class="reviewItem">
+      <div style="font-weight:900; margin-bottom:6px;">${i+1}. ${r.prompt.replace(/\n/g, "<br>")}</div>
+      <div><strong>Your answer:</strong> <span style="color:${r.ok ? '#b9ffd6' : '#ffd3d3'}">${r.yourAnswer}</span></div>
+      <div><strong>Correct answer:</strong> ${r.correctAnswer}</div>
+      <div class="tiny" style="margin-top:6px;">${r.reason}</div>
+    </div>
+  `).join("");
+  updateTop();
+}
+
+
+function handleSecuritySkip(reasonText) {
+  if (!launched || !screens.quiz.classList.contains("active") || answered) return;
+  pendingAutoSkip = true;
+  processAnswer(-2, reasonText || "Security event detected.");
+}
+
+function applyInfraction(message) {
+  if (!launched || !screens.quiz.classList.contains("active")) return;
+  infractions++;
+  remaining = Math.max(0, remaining - 8);
+  document.getElementById("overlayText").innerHTML = message + "<br><br><strong>This question was marked as incorrect.</strong> Press <strong>Continue</strong> to move to the next question.";
+  handleSecuritySkip(message);
+  document.getElementById("btnNext").style.display = "none";
+  document.getElementById("btnFinish").style.display = "none";
+  document.getElementById("btnCheckMatch").style.display = "none";
+  showScreen("overlay");
+}
+
+document.getElementById("btnStart").onclick = startQuiz;
+document.getElementById("btnCheckMatch").onclick = () => processAnswer("matching");
+document.getElementById("btnNext").onclick = nextQuestion;
+document.getElementById("btnFinish").onclick = finishQuiz;
+document.getElementById("btnRestart").onclick = () => location.reload();
+document.getElementById("btnPrint").onclick = () => window.print();
+document.getElementById("btnContinue").onclick = () => {
+  showScreen("quiz");
+  requestFull();
+};
+
+document.addEventListener("contextmenu", e => e.preventDefault());
+document.addEventListener("copy", e => e.preventDefault());
+document.addEventListener("cut", e => e.preventDefault());
+document.addEventListener("paste", e => e.preventDefault());
+document.addEventListener("dragstart", e => e.preventDefault());
+document.addEventListener("selectstart", e => e.preventDefault());
+
+document.addEventListener("keydown", (e) => {
+  const k = e.key.toLowerCase();
+  if (
+    e.key === "F12" ||
+    (e.ctrlKey && e.shiftKey && ["i","j","c"].includes(k)) ||
+    (e.ctrlKey && ["u","s","p","c","v","x","a"].includes(k))
+  ) {
+    e.preventDefault();
+    applyInfraction("Restricted keyboard shortcut detected (copy, paste, developer tools, or source view).");
+  }
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) applyInfraction("Tab change or page minimization detected.");
+});
+
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement && launched && screens.quiz.classList.contains("active")) {
+    applyInfraction("Fullscreen mode was exited during the quiz.");
+  }
+});
+
+window.onbeforeunload = function() {
+  if (launched && screens.quiz.classList.contains("active")) return "Your progress may be lost.";
+};
+
+// Animated background
+const canvas = document.getElementById("bg");
+const ctx = canvas.getContext("2d");
+function resizeCanvas() {
+  canvas.width = window.innerWidth * devicePixelRatio;
+  canvas.height = window.innerHeight * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+const particles = Array.from({length:32}, () => ({
+  x: Math.random()*window.innerWidth,
+  y: Math.random()*window.innerHeight,
+  r: 2 + Math.random()*7,
+  dx: -0.35 + Math.random()*0.7,
+  dy: -0.35 + Math.random()*0.7,
+  c: Math.random() > 0.66 ? "85,213,255" : Math.random() > 0.5 ? "34,197,94" : "255,123,123"
+}));
+
+function drawBg() {
+  const w = window.innerWidth, h = window.innerHeight;
+  ctx.clearRect(0,0,w,h);
+  const g = ctx.createLinearGradient(0,0,w,h);
+  g.addColorStop(0,"#0f3d91");
+  g.addColorStop(0.55,"#155e75");
+  g.addColorStop(1,"#123c68");
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,w,h);
+
+  ctx.strokeStyle = "rgba(255,255,255,.08)";
+  for (let i=0;i<7;i++) {
+    ctx.beginPath();
+    ctx.moveTo(0, h*(i/7));
+    ctx.lineTo(w, h*(i/7)+10);
+    ctx.stroke();
+  }
+
+  particles.forEach(p => {
+    p.x += p.dx; p.y += p.dy;
+    if (p.x < -20) p.x = w + 20;
+    if (p.x > w + 20) p.x = -20;
+    if (p.y < -20) p.y = h + 20;
+    if (p.y > h + 20) p.y = -20;
+    const grad = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*4);
+    grad.addColorStop(0, `rgba(${p.c}, .42)`);
+    grad.addColorStop(1, `rgba(${p.c}, 0)`);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r*4,0,Math.PI*2);
+    ctx.fill();
+  });
+  requestAnimationFrame(drawBg);
+}
+drawBg();
+updateTop();
+</script>
+</body>
+</html>
